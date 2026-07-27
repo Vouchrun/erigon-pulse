@@ -4,6 +4,7 @@ package gdbme
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -63,19 +64,23 @@ quit
 	// some ideas bellow:
 	//	script fault_addr = int(lldb.frame.FindRegister('pc').GetValue(), 16) -128
 	//	memory read --format x --size 8 --count 16 --outfile /tmp/mem.txt fault_addr
+	if err := restartUnderLLDB(lldbScript); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
 
+func restartUnderLLDB(lldbScript string) error {
 	tmpFile, err := os.CreateTemp("", "lldb_script_*.txt")
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: could not create temp file for LLDB script:", err)
-		os.Exit(1)
+		return fmt.Errorf("could not create temp file for LLDB script: %w", err)
 	}
 	defer dir.RemoveFile(tmpFile.Name())
 
 	_, err = tmpFile.WriteString(lldbScript)
 	closeErr := tmpFile.Close()
 	if err != nil || closeErr != nil {
-		fmt.Fprintln(os.Stderr, "Error: could not write or close LLDB script:", err, closeErr)
-		os.Exit(1)
+		return fmt.Errorf("could not write or close LLDB script: %w", errors.Join(err, closeErr))
 	}
 
 	fmt.Fprintln(os.Stderr, "Restarting under LLDB for crash diagnostics...")
@@ -86,11 +91,7 @@ quit
 	cmd.Stdin = os.Stdin
 
 	// process replacing in order to keep only one erigon alive
-	err = syscall.Exec(lldbPath, cmd.Args, os.Environ())
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to restart under LLDB:", err)
-		os.Exit(1)
-	}
+	return syscall.Exec(lldbPath, cmd.Args, os.Environ())
 }
 
 // formatArgsForLLDB
