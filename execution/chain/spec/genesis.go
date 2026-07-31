@@ -54,12 +54,14 @@ func ReadPrealloc(fileSys fs.FS, filename string) types.GenesisAlloc {
 var (
 	// to preserve same pointer in genesis.Config and Spec.Config, init once and reuse configs
 
-	mainnetChainConfig  = ReadChainConfig(chainspecs, "chainspecs/mainnet.json")
-	sepoliaChainConfig  = ReadChainConfig(chainspecs, "chainspecs/sepolia.json")
-	hoodiChainConfig    = ReadChainConfig(chainspecs, "chainspecs/hoodi.json")
-	gnosisChainConfig   = ReadChainConfig(chainspecs, "chainspecs/gnosis.json")
-	chiadoChainConfig   = ReadChainConfig(chainspecs, "chainspecs/chiado.json")
-	bloatnetChainConfig = ReadChainConfig(chainspecs, "chainspecs/bloatnet.json")
+	mainnetChainConfig             = ReadChainConfig(chainspecs, "chainspecs/mainnet.json")
+	sepoliaChainConfig             = ReadChainConfig(chainspecs, "chainspecs/sepolia.json")
+	hoodiChainConfig               = ReadChainConfig(chainspecs, "chainspecs/hoodi.json")
+	gnosisChainConfig              = ReadChainConfig(chainspecs, "chainspecs/gnosis.json")
+	chiadoChainConfig              = ReadChainConfig(chainspecs, "chainspecs/chiado.json")
+	bloatnetChainConfig            = ReadChainConfig(chainspecs, "chainspecs/bloatnet.json")
+	pulsechainChainConfig          = ReadChainConfig(chainspecs, "chainspecs/pulsechain.json")
+	pulsechainTestnetV4ChainConfig = ReadChainConfig(chainspecs, "chainspecs/pulsechain-testnet-v4.json")
 )
 
 // MainnetGenesisBlock returns the Ethereum main net genesis block.
@@ -78,6 +80,31 @@ func MainnetGenesisBlock() *types.Genesis {
 func BloatnetGenesisBlock() *types.Genesis {
 	return &types.Genesis{
 		Config:     bloatnetChainConfig,
+		Nonce:      66,
+		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
+		GasLimit:   5000,
+		Difficulty: uint256.NewInt(17179869184),
+		Alloc:      ReadPrealloc(allocs, "allocs/mainnet.json"),
+	}
+}
+
+// PulsechainGenesisBlock returns the PulseChain genesis block (identical to mainnet:
+// PulseChain is a full-history fork of Ethereum mainnet at block 17,233,000).
+func PulsechainGenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     pulsechainChainConfig,
+		Nonce:      66,
+		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
+		GasLimit:   5000,
+		Difficulty: uint256.NewInt(17179869184),
+		Alloc:      ReadPrealloc(allocs, "allocs/mainnet.json"),
+	}
+}
+
+// PulsechainTestnetV4GenesisBlock returns the PulseChain testnet-v4 genesis block (identical to mainnet).
+func PulsechainTestnetV4GenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     pulsechainTestnetV4ChainConfig,
 		Nonce:      66,
 		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
 		GasLimit:   5000,

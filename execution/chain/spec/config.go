@@ -43,6 +43,8 @@ func init() {
 	RegisterChainSpec(networkname.Chiado, Chiado)
 	RegisterChainSpec(networkname.Test, Test)
 	RegisterChainSpec(networkname.Bloatnet, Bloatnet)
+	RegisterChainSpec(networkname.Pulsechain, Pulsechain)
+	RegisterChainSpec(networkname.PulsechainTestnetV4, PulsechainTestnetV4)
 
 	// verify registered chains
 	for name, spec := range registeredChainsByName {
@@ -218,6 +220,24 @@ var (
 		Genesis:     BloatnetGenesisBlock(),
 		DNSNetwork:  "", // No DNS discovery
 		NetworkID:   12159,
+	}
+
+	Pulsechain = Spec{
+		Name:        networkname.Pulsechain,
+		GenesisHash: common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), // Same as mainnet
+		Bootnodes:   pulsechainBootnodes,
+		Config:      ReadChainConfig(chainspecs, "chainspecs/pulsechain.json"),
+		Genesis:     PulsechainGenesisBlock(),
+		DNSNetwork:  pulsechainDNSPrefix + "all.mainnet.pulsedisco.net",
+	}
+
+	PulsechainTestnetV4 = Spec{
+		Name:        networkname.PulsechainTestnetV4,
+		GenesisHash: common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), // Same as mainnet
+		Bootnodes:   pulsechainTestnetV4Bootnodes,
+		Config:      ReadChainConfig(chainspecs, "chainspecs/pulsechain-testnet-v4.json"),
+		Genesis:     PulsechainTestnetV4GenesisBlock(),
+		DNSNetwork:  pulsechainDNSPrefix + "all.testnet-v4.pulsedisco.net",
 	}
 )
 

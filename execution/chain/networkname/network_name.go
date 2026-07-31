@@ -35,6 +35,8 @@ const (
 	Chiado              = "chiado"
 	Test                = "test"
 	Bloatnet            = "bloatnet"
+	Pulsechain          = "pulsechain"
+	PulsechainTestnetV4 = "pulsechain-testnet-v4"
 )
 
 var All = []string{
@@ -49,6 +51,8 @@ var All = []string{
 	Chiado,
 	Test,
 	Bloatnet,
+	Pulsechain,
+	PulsechainTestnetV4,
 }
 
 // Supported checks if the given network name is supported by Erigon.
