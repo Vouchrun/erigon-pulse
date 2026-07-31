@@ -400,6 +400,19 @@ func (c *Config) IsShanghai(time uint64) bool {
 	return isForked(c.ShanghaiTime, time)
 }
 
+// mainnetShanghaiTime is the Ethereum mainnet Shanghai activation time; pre-PrimordialPulse
+// blocks (copied mainnet history) are evaluated against it rather than the chain's own shanghaiTime.
+const mainnetShanghaiTime = 1681338455
+
+// IsShanghaiAt returns whether Shanghai is active for the given block, evaluating
+// pre-PrimordialPulse blocks against the Ethereum mainnet Shanghai time.
+func (c *Config) IsShanghaiAt(num, time uint64) bool {
+	if c.PrimordialPulseAhead(num) {
+		return time >= mainnetShanghaiTime
+	}
+	return c.IsShanghai(time)
+}
+
 // IsAgra returns whether num is either equal to the Agra fork block or greater.
 // The Agra hard fork is based on the Shanghai hard fork, but it doesn't include withdrawals.
 // Also Agra is activated based on the block number rather than the timestamp.

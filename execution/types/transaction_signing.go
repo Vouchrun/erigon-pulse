@@ -46,6 +46,10 @@ func MakeSigner(config *chain.Config, blockNumber uint64, blockTime uint64) *Sig
 		if config.ChainID != nil {
 			chainId.Set(config.ChainID)
 		}
+		// PulseChain: pre-fork (Ethereum history) transactions sign with chain ID 1.
+		if config.PrimordialPulseAhead(blockNumber) {
+			chainId.SetUint64(1)
+		}
 		signer.unprotected = true
 		switch {
 		case config.IsPrague(blockTime):

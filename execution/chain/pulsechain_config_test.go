@@ -42,3 +42,20 @@ func TestPrimordialPulseBlockChecks(t *testing.T) {
 	assert.False(t, cfg.PrimordialPulseAhead(17_233_000), "fork block itself is not ahead")
 	assert.False(t, cfg.PrimordialPulseAhead(17_233_001))
 }
+
+func TestIsShanghaiAtPrimordialPulse(t *testing.T) {
+	t.Parallel()
+
+	cfg := &Config{
+		ShanghaiTime:         common.NewUint64(1_683_786_515),
+		PrimordialPulseBlock: common.NewUint64(17_233_000),
+	}
+	assert.True(t, cfg.IsShanghaiAt(17_232_999, 1_681_338_455), "pre-fork blocks use the Ethereum mainnet Shanghai time")
+	assert.False(t, cfg.IsShanghaiAt(17_232_999, 1_681_338_454))
+	assert.True(t, cfg.IsShanghaiAt(17_233_000, 1_683_786_515), "fork block uses the chain shanghaiTime")
+	assert.False(t, cfg.IsShanghaiAt(17_233_000, 1_683_786_514))
+
+	plain := &Config{ShanghaiTime: common.NewUint64(1_683_786_515)}
+	assert.True(t, plain.IsShanghaiAt(1, 1_683_786_515), "no primordial config: plain IsShanghai behavior")
+	assert.False(t, plain.IsShanghaiAt(1, 1_683_786_514))
+}
