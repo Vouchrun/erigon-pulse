@@ -107,6 +107,14 @@ func (s *Merge) VerifyHeader(chain rules.ChainHeaderReader, header *types.Header
 		return err
 	}
 	if !reached {
+		if chain.Config().PulseChain != nil && misc.IsPoSHeader(header) {
+			// PulseChain: Ethereum's post-merge history precedes the PulseChain TTD.
+			parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+			if parent == nil {
+				return rules.ErrUnknownAncestor
+			}
+			return s.verifyHeader(chain, header, parent)
+		}
 		// Not verifying seals if the TTD is passed
 		return s.eth1Engine.VerifyHeader(chain, header, !chain.Config().TerminalTotalDifficultyPassed)
 	}
@@ -328,7 +336,7 @@ func (s *Merge) verifyHeader(chain rules.ChainHeaderReader, header, parent *type
 	}
 
 	// Verify existence / non-existence of withdrawalsHash
-	shanghai := chain.Config().IsShanghai(header.Time)
+	shanghai := chain.Config().IsShanghaiAt(header.Number.Uint64(), header.Time)
 	if shanghai && header.WithdrawalsHash == nil {
 		return errors.New("missing withdrawalsHash")
 	}

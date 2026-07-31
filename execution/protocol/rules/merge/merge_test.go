@@ -17,6 +17,7 @@
 package merge
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/holiman/uint256"
@@ -28,6 +29,7 @@ import (
 	"github.com/erigontech/erigon/execution/chain"
 	chainspec "github.com/erigontech/erigon/execution/chain/spec"
 	"github.com/erigontech/erigon/execution/protocol/rules"
+	"github.com/erigontech/erigon/execution/protocol/rules/ethash"
 	"github.com/erigontech/erigon/execution/state"
 	"github.com/erigontech/erigon/execution/tracing"
 	"github.com/erigontech/erigon/execution/types"
@@ -135,4 +137,51 @@ func TestNullParentBeaconBlockRootDoesNotPanic(t *testing.T) {
 	mergeEngine := New(eth1Engine)
 	err := mergeEngine.Initialize(chainConfig, chainReader, header, &intraBlockState, systemCallCustom, logger, &tracer)
 	assert.NoError(t, err)
+}
+
+type pulseReaderMock struct{ readerMock }
+
+func (r pulseReaderMock) Config() *chain.Config { return chainspec.Pulsechain.Config }
+
+func (r pulseReaderMock) GetTd(common.Hash, uint64) *uint256.Int {
+	return uint256.NewInt(1) // far below the PulseChain TTD
+}
+
+type mainnetReaderMock struct{ readerMock }
+
+func (r mainnetReaderMock) Config() *chain.Config { return chainspec.Mainnet.Config }
+
+func (r mainnetReaderMock) GetTd(common.Hash, uint64) *uint256.Int {
+	return uint256.NewInt(1) // far below the mainnet TTD
+}
+
+func TestVerifyHeaderRoutesPoSBeforePulseTTD(t *testing.T) {
+	// FullFake eth1 accepts anything, so nil means the eth1 route and
+	// ErrUnknownAncestor (missing parent) means the PoS route.
+	mergeEngine := New(ethash.NewFullFaker())
+
+	posHeader := &types.Header{
+		Number:     *uint256.NewInt(17_232_999),
+		Difficulty: *common.Num0,
+		Time:       1_683_985_199,
+		ParentHash: common.HexToHash("0xdead"),
+	}
+	err := mergeEngine.VerifyHeader(pulseReaderMock{}, posHeader, false)
+	if !errors.Is(err, rules.ErrUnknownAncestor) {
+		t.Fatalf("pulse chain PoS header before TTD must take the PoS path (missing parent), got %v", err)
+	}
+
+	powHeader := &types.Header{
+		Number:     *uint256.NewInt(17_233_000),
+		Difficulty: *uint256.NewInt(131_072),
+		Time:       1_683_985_200,
+		ParentHash: common.HexToHash("0xbeef"),
+	}
+	if err := mergeEngine.VerifyHeader(pulseReaderMock{}, powHeader, false); err != nil {
+		t.Fatalf("primordial header must route to the eth1 engine, got %v", err)
+	}
+
+	if err := mergeEngine.VerifyHeader(mainnetReaderMock{}, posHeader, false); err != nil {
+		t.Fatalf("non-pulse chain PoS header before TTD must keep the upstream eth1 route, got %v", err)
+	}
 }

@@ -39,6 +39,7 @@ import (
 	"github.com/erigontech/erigon/execution/protocol/params"
 	"github.com/erigontech/erigon/execution/protocol/rules"
 	"github.com/erigontech/erigon/execution/protocol/rules/ethash/ethashcfg"
+	"github.com/erigontech/erigon/execution/pulse"
 	"github.com/erigontech/erigon/execution/rlp"
 	"github.com/erigontech/erigon/execution/state"
 	"github.com/erigontech/erigon/execution/tracing"
@@ -314,6 +315,8 @@ func (ethash *Ethash) CalcDifficulty(chain rules.ChainHeaderReader, time, parent
 func CalcDifficulty(config *chain.Config, time, parentTime uint64, parentDifficulty uint256.Int, parentNumber uint64, parentUncleHash common.Hash) uint256.Int {
 	next := parentNumber + 1
 	switch {
+	case config.IsPrimordialPulseBlock(next):
+		return *chain.PulseChainTTDOffset
 	case config.IsGrayGlacier(next):
 		return calcDifficultyEip5133(time, parentTime, parentDifficulty, parentNumber, parentUncleHash)
 	case config.IsArrowGlacier(next):
@@ -426,6 +429,11 @@ func (ethash *Ethash) Finalize(config *chain.Config, header *types.Header, state
 	uncles []*types.Header, r types.Receipts, withdrawals []*types.Withdrawal,
 	chain rules.ChainReader, syscall rules.SystemCall, skipReceiptsEval bool, logger log.Logger,
 ) (types.FlatRequests, error) {
+	if config.IsPrimordialPulseBlock(header.Number.Uint64()) {
+		if err := pulse.PrimordialPulseFork(state, config.PulseChain, config.ChainID); err != nil {
+			return nil, err
+		}
+	}
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(config, state, header, uncles)
 	return nil, nil
