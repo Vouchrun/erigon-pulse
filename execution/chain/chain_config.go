@@ -75,6 +75,7 @@ type Config struct {
 	TerminalTotalDifficultyPassed bool         `json:"terminalTotalDifficultyPassed,omitempty"` // Disable PoW sync for networks that have already passed through the Merge
 	MergeNetsplitBlock            *uint64      `json:"mergeNetsplitBlock,omitempty"`            // Virtual fork after The Merge to use as a network splitter; see FORK_NEXT_VALUE in EIP-3675
 	MergeHeight                   *uint64      `json:"mergeBlock,omitempty"`                    // The Merge block number
+	PrimordialPulseBlock          *uint64      `json:"primordialPulseBlock,omitempty"`          // PulseChain: fork block of the one-time PrimordialPulse state transition
 
 	// Mainnet fork scheduling switched from block numbers to timestamps after The Merge
 	ShanghaiTime  *uint64 `json:"shanghaiTime,omitempty"`
@@ -122,6 +123,9 @@ type Config struct {
 
 	Bor     BorConfig       `json:"-"`
 	BorJSON json.RawMessage `json:"bor,omitempty"`
+
+	// PulseChain holds PulseChain-specific options (nil for all other chains).
+	PulseChain *PulseChainConfig `json:"pulseChain,omitempty"`
 
 	// DisabledEIPs lists EIPs that are disabled for this chain, even when
 	// their parent fork is active. Used for devnets where the reference
@@ -378,6 +382,17 @@ func (c *Config) IsArrowGlacier(num uint64) bool {
 // IsGrayGlacier returns whether num is either equal to the Gray Glacier (EIP-5133) fork block or greater.
 func (c *Config) IsGrayGlacier(num uint64) bool {
 	return isForked(c.GrayGlacierBlock, num)
+}
+
+// IsPrimordialPulseBlock returns whether the given block is the PulseChain PrimordialPulse fork block.
+func (c *Config) IsPrimordialPulseBlock(num uint64) bool {
+	return c.PrimordialPulseBlock != nil && *c.PrimordialPulseBlock == num
+}
+
+// PrimordialPulseAhead returns true while the PrimordialPulse fork block is still ahead,
+// meaning the chain is evaluated with Ethereum mainnet history semantics (chain ID 1).
+func (c *Config) PrimordialPulseAhead(num uint64) bool {
+	return c.PrimordialPulseBlock != nil && *c.PrimordialPulseBlock > num
 }
 
 // IsShanghai returns whether time is either equal to the Shanghai fork time or greater.
@@ -661,7 +676,7 @@ func (c *Config) checkCompatible(newcfg *Config, head uint64) *ConfigCompatError
 	if incompatible(c.SpuriousDragonBlock, newcfg.SpuriousDragonBlock, head) {
 		return newCompatError("Spurious Dragon fork block", c.SpuriousDragonBlock, newcfg.SpuriousDragonBlock)
 	}
-	if c.IsSpuriousDragon(head) && !uint256Equal(c.ChainID, newcfg.ChainID) {
+	if c.IsSpuriousDragon(head) && !uint256Equal(c.ChainID, newcfg.ChainID) && !newcfg.PrimordialPulseAhead(head) {
 		return newCompatError("EIP155 chain ID", c.SpuriousDragonBlock, newcfg.SpuriousDragonBlock)
 	}
 	if incompatible(c.ByzantiumBlock, newcfg.ByzantiumBlock, head) {
@@ -697,6 +712,9 @@ func (c *Config) checkCompatible(newcfg *Config, head uint64) *ConfigCompatError
 	}
 	if incompatible(c.MergeNetsplitBlock, newcfg.MergeNetsplitBlock, head) {
 		return newCompatError("Merge netsplit block", c.MergeNetsplitBlock, newcfg.MergeNetsplitBlock)
+	}
+	if incompatible(c.PrimordialPulseBlock, newcfg.PrimordialPulseBlock, head) {
+		return newCompatError("PrimordialPulse fork block", c.PrimordialPulseBlock, newcfg.PrimordialPulseBlock)
 	}
 
 	return nil

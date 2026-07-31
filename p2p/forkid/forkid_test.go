@@ -173,6 +173,16 @@ func TestCreation(t *testing.T) {
 				{54876000, 0, ID{Hash: ChecksumToBytes(0xf097bc13), Activation: 54876000, Next: 73440256}}, // First Napoli block
 			},
 		},
+		{
+			chainspec.Pulsechain,
+			[]testcase{
+				{0, 0, ID{Hash: ChecksumToBytes(0xfc64ec04), Activation: 0, Next: 1150000}},                         // Unsynced (identical to mainnet: shared genesis and schedule)
+				{15050000, 1656586444, ID{Hash: ChecksumToBytes(0xf0afd0e3), Activation: 15050000, Next: 17233000}}, // First Gray Glacier block
+				{17232999, 1683985199, ID{Hash: ChecksumToBytes(0xf0afd0e3), Activation: 15050000, Next: 17233000}}, // Last pre-primordial block
+				{17233000, 1683985200, ID{Hash: ChecksumToBytes(0x62ebcfaf), Activation: 1683786515, Next: 0}},      // PrimordialPulse block; Shanghai time fork already passed
+				{17233001, 1683985210, ID{Hash: ChecksumToBytes(0x62ebcfaf), Activation: 1683786515, Next: 0}},      // First post-primordial block
+			},
+		},
 	}
 	for i, tt := range tests {
 		for j, ttt := range tt.cases {
