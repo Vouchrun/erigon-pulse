@@ -322,6 +322,7 @@ check-generated:
 		echo "ERROR: go.mod or go.sum is out of date. Run 'go mod tidy' and commit."; exit 1; fi
 
 ## check-large-files BASE=<ref>:        check for files >1MB added vs BASE (default: main)
+## execution/pulse/*.bin are excluded: embedded PulseChain allocation data by design (byte-verified against go-pulse)
 check-large-files:
 	@base="${BASE:-main}"; \
 	found=0; \
@@ -331,7 +332,7 @@ check-large-files:
 			echo "$$(awk "BEGIN{printf \"%.1f\", $$size/1048576}") MB: $$file"; \
 			found=1; \
 		fi; \
-	done < <(git diff --diff-filter=ACMR --name-only "$$base"...HEAD); \
+	done < <(git diff --diff-filter=ACMR --name-only "$$base"...HEAD | grep -v -E '^execution/pulse/.+\.bin$$'); \
 	if [ "$$found" -eq 1 ]; then \
 		echo "ERROR: Files exceeding 1 MB found."; \
 		exit 1; \
