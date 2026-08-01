@@ -17,6 +17,13 @@
   "grayGlacierBlock": 15050000,
   "terminalTotalDifficulty": 58750003716598352947541,
   "terminalTotalDifficultyPassed": true,
+  "primordialPulseBlock": 16492700,
+  "pulseChain": {
+    "treasury": {
+      "addr": "0xA592ED65885bcbCeb30442F4902a0D1Cf3AcB8fC",
+      "balance": "0x314DC6448D9338C15B0A00000000"
+    }
+  },
   "shanghaiTime": 1682700369,
   "depositContractAddress": "0x3693693693693693693693693693693693693693",
   "ethash": {},

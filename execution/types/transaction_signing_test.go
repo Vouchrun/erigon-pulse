@@ -27,6 +27,7 @@ import (
 
 	"github.com/erigontech/erigon/common"
 	"github.com/erigontech/erigon/common/crypto"
+	"github.com/erigontech/erigon/execution/chain"
 )
 
 func TestEIP1559Signing(t *testing.T) {
@@ -188,4 +189,21 @@ func TestSignatureValuesError(t *testing.T) {
 			t.Logf("Got expected error: %v", err)
 		}
 	}()
+}
+
+func TestMakeSignerPrimordialPulse(t *testing.T) {
+	t.Parallel()
+	cfg := &chain.Config{
+		ChainID:              uint256.NewInt(369),
+		SpuriousDragonBlock:  common.NewUint64(2_675_000),
+		LondonBlock:          common.NewUint64(12_965_000),
+		PrimordialPulseBlock: common.NewUint64(17_233_000),
+	}
+
+	if pre := MakeSigner(cfg, 17_232_999, 1_683_985_199); pre.chainID.Cmp(uint256.NewInt(1)) != 0 {
+		t.Errorf("pre-fork signer chainID: got %v, want 1", &pre.chainID)
+	}
+	if at := MakeSigner(cfg, 17_233_000, 1_683_985_200); at.chainID.Cmp(uint256.NewInt(369)) != 0 {
+		t.Errorf("fork-block signer chainID: got %v, want 369", &at.chainID)
+	}
 }

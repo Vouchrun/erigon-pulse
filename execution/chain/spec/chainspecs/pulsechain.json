@@ -17,6 +17,8 @@
   "grayGlacierBlock": 15050000,
   "terminalTotalDifficulty": 58750003716598352947541,
   "terminalTotalDifficultyPassed": true,
+  "primordialPulseBlock": 17233000,
+  "pulseChain": {},
   "shanghaiTime": 1683786515,
   "depositContractAddress": "0x3693693693693693693693693693693693693693",
   "ethash": {},

@@ -251,6 +251,10 @@ const (
 	// BalanceChangeRevert is emitted when the balance is reverted back to a previous value due to call failure.
 	// It is only emitted when the tracer has opted in to use the journaling wrapper (WrapWithJournal).
 	BalanceChangeRevert BalanceChangeReason = 15
+
+	// PulseChain fork
+	// BalanceIncreaseSacrificeCredit is ether allocated to sacrifice accounts at the PrimordialPulse block.
+	BalanceIncreaseSacrificeCredit BalanceChangeReason = 16
 )
 
 // GasChangeReason is used to indicate the reason for a gas change, useful

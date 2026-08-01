@@ -28,6 +28,9 @@ func (bc *BlockContext) Rules(c *chain.Config) *chain.Rules {
 	if chainID == nil {
 		chainID = new(uint256.Int)
 	}
+	if c.PrimordialPulseAhead(bc.BlockNumber) {
+		chainID = uint256.NewInt(1)
+	}
 
 	return &chain.Rules{
 		ChainID:            new(uint256.Int).Set(chainID),
@@ -40,7 +43,7 @@ func (bc *BlockContext) Rules(c *chain.Config) *chain.Rules {
 		IsIstanbul:         c.IsIstanbul(bc.BlockNumber),
 		IsBerlin:           c.IsBerlin(bc.BlockNumber),
 		IsLondon:           c.IsLondon(bc.BlockNumber),
-		IsShanghai:         c.IsShanghai(bc.Time) || c.IsAgra(bc.BlockNumber),
+		IsShanghai:         c.IsShanghaiAt(bc.BlockNumber, bc.Time) || c.IsAgra(bc.BlockNumber),
 		IsCancun:           c.IsCancun(bc.Time),
 		IsNapoli:           c.IsNapoli(bc.BlockNumber),
 		IsAhmedabad:        c.IsAhmedabad(bc.BlockNumber),
