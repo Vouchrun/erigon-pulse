@@ -341,7 +341,8 @@ func (p *Provider) startSharedP2PServer(cfg *p2p.Config, chainBootnodes []string
 	}
 
 	// Apply DNS discovery to each Protocol's DialCandidates, then merge.
-	if !cfg.NoDiscovery && len(cfg.DiscoveryDNS) == 0 && chainDNSNetwork != "" {
+	// Nil means unset; an explicit empty slice (--discovery.dns="") disables DNS discovery.
+	if !cfg.NoDiscovery && cfg.DiscoveryDNS == nil && chainDNSNetwork != "" {
 		cfg.DiscoveryDNS = []string{chainDNSNetwork}
 	}
 
