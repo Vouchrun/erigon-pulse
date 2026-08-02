@@ -147,6 +147,67 @@ func TestStartSharedP2PServer_DedupesAndInjects(t *testing.T) {
 	require.Same(t, p.sharedP2PServer, second.GetP2PServer())
 }
 
+// TestStartSharedP2PServer_PreservesExplicitEmptyDiscoveryDNS pins the
+// --discovery.dns="" contract: an explicit empty slice must survive
+// startSharedP2PServer untouched — the chain-default DNS tree is only a
+// fallback for the unset (nil) case.
+func TestStartSharedP2PServer_PreservesExplicitEmptyDiscoveryDNS(t *testing.T) {
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	p := &Provider{
+		logger: log.Root(),
+		cfg:    Config{SentryCtx: t.Context()},
+	}
+	p.Servers = []*sentry.GrpcServer{helperGrpcServerWithProtocols(
+		p2p.Protocol{Name: "eth", Version: 71, Length: 17},
+	)}
+
+	cfg := p2p.Config{
+		PrivateKey:      key,
+		MaxPeers:        1,
+		MaxPendingPeers: 1,
+		NoDial:          true,
+		ListenAddr:      "127.0.0.1:0",
+		DiscoveryDNS:    []string{},
+	}
+	require.NoError(t, p.startSharedP2PServer(&cfg, nil, "enrtree://APFXO36RU3TWV7XFGWI2TYF5IDA3WM2GPTRL3TCZINWHZX4R6TAOK@all.mainnet.pulsedisco.net"))
+	t.Cleanup(func() { p.Close() })
+
+	require.Empty(t, cfg.DiscoveryDNS, "explicit empty must not be overridden by the chain default")
+	require.Nil(t, cfg.Protocols[0].DialCandidates, "no DNS iterator when discovery DNS is explicitly empty")
+}
+
+// TestStartSharedP2PServer_AppliesChainDefaultDNSWhenUnset documents the
+// fallback the nil check preserves: DiscoveryDNS never configured (nil)
+// picks up the chain's DNS tree.
+func TestStartSharedP2PServer_AppliesChainDefaultDNSWhenUnset(t *testing.T) {
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	p := &Provider{
+		logger: log.Root(),
+		cfg:    Config{SentryCtx: t.Context()},
+	}
+	p.Servers = []*sentry.GrpcServer{helperGrpcServerWithProtocols(
+		p2p.Protocol{Name: "eth", Version: 71, Length: 17},
+	)}
+
+	const chainDNS = "enrtree://APFXO36RU3TWV7XFGWI2TYF5IDA3WM2GPTRL3TCZINWHZX4R6TAOK@all.mainnet.pulsedisco.net"
+	cfg := p2p.Config{
+		PrivateKey:      key,
+		MaxPeers:        1,
+		MaxPendingPeers: 1,
+		NoDial:          true,
+		ListenAddr:      "127.0.0.1:0",
+	}
+	require.NoError(t, p.startSharedP2PServer(&cfg, nil, chainDNS))
+	t.Cleanup(func() { p.Close() })
+
+	require.Equal(t, []string{chainDNS}, cfg.DiscoveryDNS)
+	require.NotNil(t, cfg.Protocols[0].DialCandidates)
+}
+
 // TestProviderClose_StopsSharedP2PServer mirrors the GrpcServer-side test:
 // Provider.Close must stop the shared p2p.Server it created (GrpcServer.Close
 // is a no-op for external servers by design). We bind an ephemeral listener
